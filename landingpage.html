@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MDT System - Landing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gradient-to-r from-[#63FFFD] to-[#00A8FF] h-screen flex flex-col items-center justify-center">
+
+    <img src="assets/shield.png" class="w-32 h-32 mb-6">
+
+    <h1 class="text-5xl font-extrabold text-white mb-6 text-center">Instant Vehicle & License Data</h1>
+    <p class="text-xl text-white mb-10 text-center">Smarter MDT. Faster civil processes.</p>
+
+    <a href="index.html" class="bg-white text-blue-500 font-bold px-10 py-4 rounded-xl shadow-lg hover:bg-gray-200 transition text-xl">
+        Get Started
+    </a>
+<script src="script.js"></script>
+</body>
+</html>

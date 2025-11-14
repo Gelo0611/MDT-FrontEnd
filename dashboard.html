@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MDT Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gradient-to-r from-[#63FFFD] to-[#00A8FF] min-h-screen">
+
+    <!-- STICKY GRADIENT NAVBAR -->
+    <nav class="bg-gradient-to-r from-[#63FFFD] to-[#00A8FF] shadow-lg px-6 py-3 flex justify-between items-center sticky top-0 z-50">
+        <!-- Left: Dashboard link with burger icon -->
+        <a href="dashboard.html" class="flex items-center gap-2 text-white font-bold hover:text-gray-200 transition">
+            <div class="space-y-1">
+                <span class="block w-5 h-0.5 bg-white"></span>
+                <span class="block w-5 h-0.5 bg-white"></span>
+                <span class="block w-5 h-0.5 bg-white"></span>
+            </div>
+            <span>Dashboard</span>
+        </a>
+
+        <!-- Right: Logout -->
+        <a href="index.html" class="flex items-center gap-2 text-white font-bold hover:text-gray-200 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1m0-10V5" />
+            </svg>
+            <span>Logout</span>
+        </a>
+    </nav>
+
+    <!-- MAIN CONTENT CENTERED -->
+    <div class="flex flex-col items-center justify-center h-[calc(100vh-64px)] px-4">
+        <!-- Titles -->
+        <h1 class="text-3xl font-extrabold mb-2 text-center text-white">Quick Access</h1>
+        <h2 class="text-xl font-normal mb-6 text-center text-white">
+            Select a search type to retrieve civilian data
+        </h2>
+
+        <!-- Buttons -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-xl w-full">
+            <a href="vehicle.html" class="bg-gradient-to-r from-blue-500 to-blue-700 text-white p-6 rounded-2xl text-xl font-bold shadow-xl hover:from-blue-600 hover:to-blue-800 transition flex items-center justify-center gap-3">
+    <img src="assets/car.png" class="w-6 h-6">
+    Check Vehicle
+</a>
+
+            <a href="license.html" class="bg-gradient-to-r from-green-500 to-green-700 text-white p-6 rounded-2xl text-xl font-bold shadow-xl hover:from-green-600 hover:to-green-800 transition flex items-center justify-center gap-3">
+    <img src="assets/id.png" class="w-6 h-6">
+    Check License
+</a>
+
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

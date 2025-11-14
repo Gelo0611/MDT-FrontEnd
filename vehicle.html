@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Check Vehicle</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gradient-to-r from-[#63FFFD] to-[#00A8FF] min-h-screen">
+
+    <!-- STICKY NAVBAR -->
+    <nav class="bg-gradient-to-r from-[#63FFFD] to-[#00A8FF] shadow-lg px-6 py-3 flex justify-between items-center sticky top-0 z-50">
+        <a href="dashboard.html" class="flex items-center gap-2 text-white font-bold hover:text-gray-200 transition">
+            <div class="space-y-1">
+                <span class="block w-5 h-0.5 bg-white"></span>
+                <span class="block w-5 h-0.5 bg-white"></span>
+                <span class="block w-5 h-0.5 bg-white"></span>
+            </div>
+            <span>Dashboard</span>
+        </a>
+        <a href="index.html" class="flex items-center gap-2 text-white font-bold hover:text-gray-200 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1m0-10V5" />
+            </svg>
+            <span>Logout</span>
+        </a>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <div class="flex flex-col items-center justify-start mt-12 px-4">
+        
+        <h1 class="text-3xl font-extrabold mb-6 text-center text-white">Vehicle Lookup</h1>
+
+        <!-- Input and Search Button -->
+        <div class="flex flex-col sm:flex-row gap-2 justify-center mb-4 w-full max-w-md">
+            <input id="plateInput" type="text" placeholder="Enter Plate Number" class="p-3 border rounded-lg w-full sm:w-80">
+            <button onclick="lookupVehicle()" class="bg-gradient-to-r from-blue-500 to-blue-700 text-white px-6 py-3 rounded-xl hover:from-blue-600 hover:to-blue-800 transition font-bold">
+                Search
+            </button>
+        </div>
+
+        <!-- Error Message -->
+        <p id="error" class="text-red-600 mt-3 text-center hidden">
+            Vehicle Information doesn’t exist. Please check your input details.
+        </p>
+
+        <!-- Vehicle Info Box -->
+        <div id="infoBox" class="hidden mt-6 max-w-3xl w-full bg-white p-6 rounded-2xl shadow-lg text-gray-800"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

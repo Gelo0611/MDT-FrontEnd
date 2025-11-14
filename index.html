@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MDT System - Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gradient-to-r from-[#63FFFD] to-[#00A8FF] h-screen flex flex-col items-center justify-center">
+
+<div class="bg-white p-10 rounded-2xl shadow-2xl w-96">
+    <h1 class="text-3xl font-extrabold text-center mb-6">Login</h1>
+    
+    <input id="username" type="text" placeholder="Username" class="w-full p-3 mb-4 border rounded-lg">
+    <input id="password" type="password" placeholder="Password" class="w-full p-3 mb-4 border rounded-lg">
+    <button onclick="login()" class="w-full bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 rounded-xl hover:from-blue-600 hover:to-blue-800 transition font-bold">Login</button>
+    <p id="error" class="text-red-500 text-center mt-3 hidden">Invalid login.</p>
+</div>
+
+<script>
+function login() {
+    const user = document.getElementById("username").value;
+    const pass = document.getElementById("password").value;
+
+    if(user === "admin" && pass === "admin") {
+        window.location.href = "dashboard.html";
+    } else {
+        document.getElementById("error").classList.remove("hidden");
+    }
+}
+</script>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+/* Global font */
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Buttons hover effect */
+button:hover {
+    opacity: 0.9;
+    transition: all 0.2s ease-in-out;
+}
+
+/* Inputs focus effect */
+input:focus, textarea:focus {
+    outline: none;
+    border-color: #2563EB; /* Tailwind blue-600 */
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3);
+}
+
+/* Table row hover */
+#violationTable tr:hover {
+    background-color: #f3f4f6;
+}

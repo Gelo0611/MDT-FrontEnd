@@ -42,69 +42,112 @@ const licenseDB = {
     }
 };
 
-// ---------- VEHICLE LOOKUP ----------
-function lookupVehicle() {
-    const plate = document.getElementById("plateInput").value.trim();
+// ---------- STATE ----------
+let currentLicense = null;
+
+// ---------- HELPERS ----------
+function normalize(str) {
+    return String(str || "").trim().toLowerCase();
+}
+
+function showError(message = "Record not found. Please check your input.") {
     const error = document.getElementById("error");
     const box = document.getElementById("infoBox");
-
-    if(!vehicleDB[plate]) {
-        box.classList.add("hidden");
+    if (box) box.classList.add("hidden");
+    if (error) {
+        error.textContent = message;
         error.classList.remove("hidden");
+    }
+}
+
+function clearError() {
+    const error = document.getElementById("error");
+    if (error) error.classList.add("hidden");
+}
+
+// ---------- VEHICLE LOOKUP ----------
+function lookupVehicle() {
+    const inputEl = document.getElementById("vehicleInput") || document.getElementById("plateInput");
+    const input = inputEl ? inputEl.value.trim() : "";
+    const box = document.getElementById("infoBox");
+
+    clearError();
+    if (!input) {
+        showError("Please enter a Plate Number or MV File Number.");
         return;
     }
 
-    error.classList.add("hidden");
-    const v = vehicleDB[plate];
+    const normInput = normalize(input);
+
+    // Try direct plate key match
+    let vehicle = Object.values(vehicleDB).find(v => normalize(v.plate) === normInput);
+
+    // If not found, try MV File number
+    if (!vehicle) {
+        vehicle = Object.values(vehicleDB).find(v => normalize(v.mvFile) === normInput);
+    }
+
+    if (!vehicle) {
+        showError();
+        return;
+    }
+
+    const ownerLicenseLink = vehicle.ownerLicense
+        ? `<a href="#" class="text-blue-600 underline" onclick="lookupLicense('${vehicle.ownerLicense}'); return false;">${vehicle.ownerLicense}</a>`
+        : "N/A";
 
     box.innerHTML = `
         <div class="bg-white rounded-2xl shadow-xl p-6 space-y-4">
             <h2 class="text-2xl font-bold mb-2">Vehicle Information</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <p><b>Status:</b> ${v.status}</p>
-                <p><b>Plate Number:</b> ${v.plate}</p>
-                <p><b>MV File Number:</b> ${v.mvFile}</p>
-                <p><b>Make:</b> ${v.make}</p>
-                <p><b>Model:</b> ${v.model}</p>
-                <p><b>Year:</b> ${v.year}</p>
-                <p><b>Color:</b> ${v.color}</p>
-                <p><b>VIN:</b> ${v.vin}</p>
-                <p><b>Registration Expiry:</b> ${v.regExpiry}</p>
+                <p><b>Status:</b> ${vehicle.status}</p>
+                <p><b>Plate Number:</b> ${vehicle.plate}</p>
+                <p><b>MV File Number:</b> ${vehicle.mvFile}</p>
+                <p><b>Make:</b> ${vehicle.make}</p>
+                <p><b>Model:</b> ${vehicle.model}</p>
+                <p><b>Year:</b> ${vehicle.year}</p>
+                <p><b>Color:</b> ${vehicle.color}</p>
+                <p><b>VIN:</b> ${vehicle.vin}</p>
+                <p><b>Registration Expiry:</b> ${vehicle.regExpiry}</p>
             </div>
+
             <h3 class="text-xl font-bold mt-4">Registered Owner</h3>
-            <p><b>Name:</b> ${v.ownerName}</p>
-            <p><b>License Number:</b> ${v.ownerLicense}</p>
-            <p><b>Address:</b> ${v.ownerAddress}</p>
+            <p><b>Name:</b> ${vehicle.ownerName}</p>
+            <p><b>License Number:</b> ${ownerLicenseLink}</p>
+            <p><b>Address:</b> ${vehicle.ownerAddress}</p>
+
             <h3 class="text-xl font-bold mt-4">Insurance Information</h3>
-            <p><b>Insurance Company:</b> ${v.insuranceCompany}</p>
-            <p><b>Policy No.:</b> ${v.policyNumber}</p>
-            <p><b>Expiry Date:</b> ${v.insuranceExpiry}</p>
+            <p><b>Insurance Company:</b> ${vehicle.insuranceCompany}</p>
+            <p><b>Policy No.:</b> ${vehicle.policyNumber}</p>
+            <p><b>Expiry Date:</b> ${vehicle.insuranceExpiry}</p>
         </div>
     `;
     box.classList.remove("hidden");
 }
 
 // ---------- LICENSE LOOKUP ----------
-let currentLicense = null;
-
-function lookupLicense() {
-    const lic = document.getElementById("licenseInput").value.trim();
-    const error = document.getElementById("error");
+function lookupLicense(licParam = null) {
+    const licenseInputEl = document.getElementById("licenseInput");
+    const lic = licParam ? String(licParam).trim() : (licenseInputEl ? licenseInputEl.value.trim() : "");
     const box = document.getElementById("infoBox");
 
-    if(!licenseDB[lic]) {
-        box.classList.add("hidden");
-        error.classList.remove("hidden");
+    if (!lic) {
+        showError("Please enter a License Number.");
         return;
     }
 
-    error.classList.add("hidden");
-    currentLicense = licenseDB[lic];
+    const matched = Object.keys(licenseDB).find(key => normalize(key) === normalize(lic));
+    if (!matched) {
+        showError();
+        return;
+    }
+
+    clearError();
+    currentLicense = licenseDB[matched];
     box.classList.remove("hidden");
 
     const L = currentLicense;
 
-    // Fill License Info
     box.innerHTML = `
         <div class="bg-white p-6 rounded-2xl shadow-xl mb-6">
             <h2 class="text-2xl font-bold mb-3">License Status</h2>
@@ -148,36 +191,62 @@ function lookupLicense() {
             </table>
         </div>
 
-        <div class="bg-white p-6 rounded-2xl shadow-xl">
-            <h2 class="text-2xl font-bold mb-4">Add New Ticket Violation</h2>
-            <div class="mb-3">
-                <label class="font-semibold">Date of Violation:</label>
-                <input id="v_date" type="date" class="p-2 border rounded w-full">
+        <!-- Add Violation Modal Trigger Button -->
+        <button id="showViolationFormBtn" 
+            class="bg-gradient-to-r from-green-500 to-green-700 text-white px-5 py-3 rounded-xl hover:from-green-600 hover:to-green-800 transition font-bold mb-4">
+            Add New Ticket Violation
+        </button>
+
+        <!-- Modal -->
+        <div id="violationModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md relative">
+                <button onclick="toggleViolationModal()" class="absolute top-3 right-3 text-gray-600 font-bold text-xl">&times;</button>
+                <h2 class="text-2xl font-bold mb-4">Add New Ticket Violation</h2>
+                <div class="mb-3">
+                    <label class="font-semibold">Date of Violation:</label>
+                    <input id="v_date" type="date" class="p-2 border rounded w-full">
+                </div>
+                <div class="mb-3">
+                    <label class="font-semibold">Offense Description:</label>
+                    <input id="v_offense" type="text" class="p-2 border rounded w-full">
+                </div>
+                <div class="mb-3">
+                    <label class="font-semibold">Place of Incident:</label>
+                    <input id="v_place" type="text" class="p-2 border rounded w-full">
+                </div>
+                <div class="mb-3">
+                    <label class="font-semibold">Note:</label>
+                    <textarea id="v_note" class="p-2 border rounded w-full"></textarea>
+                </div>
+                <button onclick="addViolation(); toggleViolationModal();" 
+                    class="bg-gradient-to-r from-blue-500 to-blue-700 text-white px-5 py-3 rounded-xl hover:from-blue-600 hover:to-blue-800 transition font-bold w-full">
+                    Submit Violation
+                </button>
             </div>
-            <div class="mb-3">
-                <label class="font-semibold">Offense Description:</label>
-                <input id="v_offense" type="text" class="p-2 border rounded w-full">
-            </div>
-            <div class="mb-3">
-                <label class="font-semibold">Place of Incident:</label>
-                <input id="v_place" type="text" class="p-2 border rounded w-full">
-            </div>
-            <div class="mb-3">
-                <label class="font-semibold">Note:</label>
-                <textarea id="v_note" class="p-2 border rounded w-full"></textarea>
-            </div>
-            <button onclick="addViolation()" class="bg-gradient-to-r from-blue-500 to-blue-700 text-white px-5 py-3 rounded-xl hover:from-blue-600 hover:to-blue-800 transition font-bold">
-                Add Violation
-            </button>
         </div>
     `;
 
     loadViolations();
+
+    // Attach click event to modal button
+    const btn = document.getElementById("showViolationFormBtn");
+    if (btn) {
+        btn.addEventListener("click", toggleViolationModal);
+    }
 }
+
+// Modal toggle function
+function toggleViolationModal() {
+    const modal = document.getElementById("violationModal");
+    if (!modal) return;
+    modal.classList.toggle("hidden");
+}
+
 
 // ---------- VIOLATION HISTORY ----------
 function loadViolations() {
     const table = document.getElementById("violationTable");
+    if (!table || !currentLicense) return;
     table.innerHTML = "";
     currentLicense.violations.forEach(v => {
         table.innerHTML += `
@@ -194,17 +263,32 @@ function loadViolations() {
 
 // ---------- ADD NEW VIOLATION ----------
 function addViolation() {
-    if(!currentLicense) return;
+    if(!currentLicense) {
+        alert("No license selected. Search for a license first.");
+        return;
+    }
+
+    const date = document.getElementById("v_date").value;
+    const offense = document.getElementById("v_offense").value.trim();
+    const place = document.getElementById("v_place").value.trim();
+    const note = document.getElementById("v_note").value.trim();
+
+    if(!date || !offense || !place) {
+        alert("Please fill in the date, offense and place fields.");
+        return;
+    }
 
     const newV = {
-        date: document.getElementById("v_date").value,
-        offense: document.getElementById("v_offense").value,
-        location: document.getElementById("v_place").value,
-        note: document.getElementById("v_note").value,
+        date,
+        offense,
+        location: place,
+        note,
         status: "Unsettled"
     };
 
     currentLicense.violations.push(newV);
+    licenseDB[currentLicense.licenseNumber] = currentLicense;
+
     loadViolations();
 
     document.getElementById("v_date").value = "";
@@ -213,4 +297,11 @@ function addViolation() {
     document.getElementById("v_note").value = "";
 
     alert("Violation added successfully!");
+}
+
+// ---------- TOGGLE FORM VISIBILITY ----------
+function toggleViolationForm() {
+    const form = document.getElementById("violationForm");
+    if (!form) return;
+    form.classList.toggle("hidden");
 }

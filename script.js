@@ -193,7 +193,7 @@ function lookupLicense(licParam = null) {
 
         <!-- Add Violation Modal Trigger Button -->
         <button id="showViolationFormBtn" 
-            class="bg-gradient-to-r from-green-500 to-green-700 text-white px-5 py-3 rounded-xl hover:from-green-600 hover:to-green-800 transition font-bold mb-4">
+            class="bg-green-500 hover:bg-red-700 transition text-white px-5 py-3 rounded-xl hover:from-green-600 hover:to-green-800 transition font-bold mb-4">
             Add New Ticket Violation
         </button>
 

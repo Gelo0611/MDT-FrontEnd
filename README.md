@@ -99,3 +99,46 @@ Modal functionality relies on dynamic JS injection. Ensure #infoBox exists in th
 When adding new violations, the table refreshes automatically and inputs are cleared after submission.
 
 Design improvements ensure consistent user experience across landing page, check vehicle, check license, and terms & conditions pages.
+
+## Changelog / Updates
+
+**Date:** 2025-12-04  
+**Version:** 1.2
+
+### What's new — Violation Actions (Edit / Delete / Print)
+- **Action buttons added** to the Violation History table:
+  - **Edit** — opens a centered modal pre-filled with the selected violation details so you can update the record. After saving, the table refreshes and the change is kept in the in-memory DB.
+  - **Delete** — removes the selected violation after a confirmation prompt, then refreshes the table.
+  - **Print** — opens a printer-friendly popup window with the selected violation formatted as a ticket and immediately calls `window.print()` so the user can print the ticket.
+
+#### Files changed
+- `license.html`
+  - Added centered Add/Edit modal markup (mobile-responsive).
+  - Re-introduced Check Vehicle UI section.
+- `script.js`
+  - Restored and improved `lookupVehicle()` and `clearVehicleBox()` for plate / MV File searches.
+  - Added `openEditViolation(index)`, `deleteViolation(index)` and `printViolation(index)` functions.
+  - Improved `loadViolations()` to render **Actions** (Edit/Delete side-by-side) and **Print** buttons.
+  - Implemented modal open/close handlers that lock background scroll and close on backdrop click.
+
+#### UX / Behavior notes
+- The Edit and Delete buttons are displayed side-by-side under the **Actions** column (not stacked), so they remain easy to reach on desktop and mobile.
+- The Edit modal is **centered both vertically and horizontally** and uses `max-height` + internal scrolling so it fits on small screens.
+- The Print button creates a lightweight printable page and triggers the print dialog; if popups are blocked, the user will see a message indicating popups must be allowed.
+
+#### How to test locally
+1. Open `license.html` in your browser (or run Live Server / GitHub Pages).  
+2. **Vehicle lookup**: enter `ABC-123` or `MV-2023-001234` → click **Search Vehicle** → verify vehicle info displays.  
+3. **License lookup**: enter `DL-2023-456789` → click **Search License** → verify license info and Violation History appear.  
+4. In Violation History:
+   - Click **Edit** on a row → modal opens pre-filled → change fields → click **Save Changes** → verify table updated.
+   - Click **Delete** on a row → confirm → verify row removed.
+   - Click **Print** on a row → printer window opens (allow popups) and print dialog appears.
+
+#### Developer notes / next steps
+- Currently changes are stored in-memory (JavaScript objects). Consider persisting to `localStorage` or a backend API for permanent storage.  
+- Optionally, add a **Status** dropdown in the Edit modal to change `Paid`/`Unsettled` status directly.  
+- Replace `alert()` / `confirm()` with a toast/notification component for smoother UX.
+
+---
+

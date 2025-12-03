@@ -44,6 +44,8 @@ const licenseDB = {
 
 // ---------- STATE ----------
 let currentLicense = null;
+// -1 means adding new; otherwise index in currentLicense.violations being edited
+let editingIndex = -1;
 
 // ---------- HELPERS ----------
 function normalize(str) {
@@ -138,7 +140,7 @@ function lookupLicense(licParam = null) {
 
     const matched = Object.keys(licenseDB).find(key => normalize(key) === normalize(lic));
     if (!matched) {
-        showError();
+        showError("License not found.");
         return;
     }
 
@@ -148,6 +150,7 @@ function lookupLicense(licParam = null) {
 
     const L = currentLicense;
 
+    // Build the info content (violation table includes Actions + Print)
     box.innerHTML = `
         <div class="bg-white p-6 rounded-2xl shadow-xl mb-6">
             <h2 class="text-2xl font-bold mb-3">License Status</h2>
@@ -180,128 +183,255 @@ function lookupLicense(licParam = null) {
             <table class="w-full border-collapse">
                 <thead class="bg-gray-200 sticky top-0">
                     <tr>
+                        <th class="border px-3 py-2 text-left">#</th>
                         <th class="border px-3 py-2 text-left">Date</th>
                         <th class="border px-3 py-2 text-left">Offense</th>
                         <th class="border px-3 py-2 text-left">Place</th>
                         <th class="border px-3 py-2 text-left">Notes</th>
+                        <th class="border px-3 py-2 text-left">Actions</th>
                         <th class="border px-3 py-2 text-left">Status</th>
+                        <th class="border px-3 py-2 text-left">Print</th>
                     </tr>
                 </thead>
                 <tbody id="violationTable"></tbody>
             </table>
         </div>
 
-        <!-- Add Violation Modal Trigger Button -->
-        <button id="showViolationFormBtn" 
-            class="bg-green-500 hover:bg-red-700 transition text-white px-5 py-3 rounded-xl hover:from-green-600 hover:to-green-800 transition font-bold mb-4">
+        <!-- Add Violation Trigger (uses static modal in HTML) -->
+        <button id="openAddBtn" 
+            class="bg-gradient-to-r from-green-500 to-green-700 text-white px-5 py-3 rounded-xl hover:from-green-600 hover:to-green-800 transition font-bold mb-4">
             Add New Ticket Violation
         </button>
-
-        <!-- Modal -->
-        <div id="violationModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md relative">
-                <button onclick="toggleViolationModal()" class="absolute top-3 right-3 text-gray-600 font-bold text-xl">&times;</button>
-                <h2 class="text-2xl font-bold mb-4">Add New Ticket Violation</h2>
-                <div class="mb-3">
-                    <label class="font-semibold">Date of Violation:</label>
-                    <input id="v_date" type="date" class="p-2 border rounded w-full">
-                </div>
-                <div class="mb-3">
-                    <label class="font-semibold">Offense Description:</label>
-                    <input id="v_offense" type="text" class="p-2 border rounded w-full">
-                </div>
-                <div class="mb-3">
-                    <label class="font-semibold">Place of Incident:</label>
-                    <input id="v_place" type="text" class="p-2 border rounded w-full">
-                </div>
-                <div class="mb-3">
-                    <label class="font-semibold">Note:</label>
-                    <textarea id="v_note" class="p-2 border rounded w-full"></textarea>
-                </div>
-                <button onclick="addViolation(); toggleViolationModal();" 
-                    class="bg-gradient-to-r from-blue-500 to-blue-700 text-white px-5 py-3 rounded-xl hover:from-blue-600 hover:to-blue-800 transition font-bold w-full">
-                    Submit Violation
-                </button>
-            </div>
-        </div>
     `;
 
+    // wire the Add button to open modal in "add" mode
+    const openAddBtn = document.getElementById("openAddBtn");
+    if (openAddBtn) openAddBtn.addEventListener("click", () => openAddViolationModal());
+
     loadViolations();
-
-    // Attach click event to modal button
-    const btn = document.getElementById("showViolationFormBtn");
-    if (btn) {
-        btn.addEventListener("click", toggleViolationModal);
-    }
 }
 
-// Modal toggle function
-function toggleViolationModal() {
-    const modal = document.getElementById("violationModal");
-    if (!modal) return;
-    modal.classList.toggle("hidden");
-}
-
-
-// ---------- VIOLATION HISTORY ----------
+// ---------- VIOLATION HISTORY (render with Actions & Print) ----------
 function loadViolations() {
     const table = document.getElementById("violationTable");
     if (!table || !currentLicense) return;
     table.innerHTML = "";
-    currentLicense.violations.forEach(v => {
+    currentLicense.violations.forEach((v, idx) => {
+        const date = v.date || "";
+        const offense = v.offense || "";
+        const place = v.location || "";
+        const note = v.note || "";
+        const statusClass = v.status === "Paid" ? "text-green-600" : "text-red-600";
+
+        // Use flex container in Actions column to ensure side-by-side buttons
         table.innerHTML += `
             <tr>
-                <td class="border px-3 py-1">${v.date}</td>
-                <td class="border px-3 py-1">${v.offense}</td>
-                <td class="border px-3 py-1">${v.location}</td>
-                <td class="border px-3 py-1">${v.note}</td>
-                <td class="border px-3 py-1 font-semibold ${v.status === "Paid" ? "text-green-600" : "text-red-600"}">${v.status}</td>
+                <td class="border px-3 py-1 text-sm">${idx + 1}</td>
+                <td class="border px-3 py-1 text-sm">${date}</td>
+                <td class="border px-3 py-1 text-sm">${offense}</td>
+                <td class="border px-3 py-1 text-sm">${place}</td>
+                <td class="border px-3 py-1 text-sm">${note}</td>
+                <td class="border px-3 py-1 text-sm">
+                    <div class="inline-flex gap-2">
+                        <button class="px-2 py-1 text-sm rounded bg-yellow-400 text-white" onclick="openEditViolation(${idx})">Edit</button>
+                        <button class="px-2 py-1 text-sm rounded bg-red-500 text-white" onclick="deleteViolation(${idx})">Delete</button>
+                    </div>
+                </td>
+                <td class="border px-3 py-1 text-sm font-semibold ${statusClass}">${v.status}</td>
+                <td class="border px-3 py-1 text-sm">
+                    <button class="px-2 py-1 rounded bg-blue-600 text-white text-sm" onclick="printViolation(${idx})">Print</button>
+                </td>
             </tr>
         `;
     });
 }
 
-// ---------- ADD NEW VIOLATION ----------
-function addViolation() {
-    if(!currentLicense) {
-        alert("No license selected. Search for a license first.");
+// ---------- ADD / EDIT MODAL HANDLERS ----------
+function openAddViolationModal() {
+    editingIndex = -1;
+    document.getElementById("modalTitle").textContent = "Add New Ticket Violation";
+    document.getElementById("modalSubmitBtn").textContent = "Add Violation";
+    clearModalFields();
+    showModal();
+}
+
+function openEditViolation(index) {
+    if (!currentLicense || !currentLicense.violations[index]) return;
+    editingIndex = index;
+    const v = currentLicense.violations[index];
+    document.getElementById("modalTitle").textContent = "Edit Ticket Violation";
+    document.getElementById("modalSubmitBtn").textContent = "Save Changes";
+
+    document.getElementById("modal_v_date").value = v.date || "";
+    document.getElementById("modal_v_offense").value = v.offense || "";
+    document.getElementById("modal_v_place").value = v.location || "";
+    document.getElementById("modal_v_note").value = v.note || "";
+
+    showModal();
+}
+
+// show modal (centered) and lock background scroll; also wire backdrop click
+function showModal() {
+    const modal = document.getElementById("addViolationModal");
+    if (!modal) return;
+    modal.classList.remove("hidden");
+
+    // lock scroll
+    document.documentElement.classList.add('overflow-y-hidden');
+
+    // close when clicking on backdrop (but not when clicking inside card)
+    modal.addEventListener('click', modalBackdropHandler);
+}
+
+// backdrop handler — close if click outside card
+function modalBackdropHandler(e) {
+    const card = document.getElementById('addViolationModalCard');
+    if (!card) return;
+    if (!card.contains(e.target)) {
+        closeAddViolationModal();
+    }
+}
+
+function closeAddViolationModal() {
+    const modal = document.getElementById("addViolationModal");
+    if (!modal) return;
+    modal.classList.add("hidden");
+
+    // restore scroll
+    document.documentElement.classList.remove('overflow-y-hidden');
+
+    // remove backdrop handler to avoid duplicates
+    modal.removeEventListener('click', modalBackdropHandler);
+
+    clearModalFields();
+    editingIndex = -1;
+    hideModalError();
+}
+
+function clearModalFields() {
+    const f = ["modal_v_date","modal_v_offense","modal_v_place","modal_v_note"];
+    f.forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+}
+
+function showModalError(msg) {
+    const el = document.getElementById("modalError");
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.remove("hidden");
+}
+function hideModalError() {
+    const el = document.getElementById("modalError");
+    if (!el) return;
+    el.classList.add("hidden");
+}
+
+// Called by modal submit button
+function addViolationFromModal() {
+    const date = document.getElementById("modal_v_date").value;
+    const offense = document.getElementById("modal_v_offense").value.trim();
+    const place = document.getElementById("modal_v_place").value.trim();
+    const note = document.getElementById("modal_v_note").value.trim();
+
+    if (!date || !offense || !place) {
+        showModalError("Please fill in the date, offense and place fields.");
         return;
     }
 
-    const date = document.getElementById("v_date").value;
-    const offense = document.getElementById("v_offense").value.trim();
-    const place = document.getElementById("v_place").value.trim();
-    const note = document.getElementById("v_note").value.trim();
-
-    if(!date || !offense || !place) {
-        alert("Please fill in the date, offense and place fields.");
-        return;
+    // If editingIndex >= 0 => update existing
+    if (editingIndex >= 0) {
+        currentLicense.violations[editingIndex].date = date;
+        currentLicense.violations[editingIndex].offense = offense;
+        currentLicense.violations[editingIndex].location = place;
+        currentLicense.violations[editingIndex].note = note;
+        // keep status unchanged when editing (you can extend to edit status too)
+    } else {
+        // add new
+        const newV = { date, offense, location: place, note, status: "Unsettled" };
+        currentLicense.violations.push(newV);
     }
 
-    const newV = {
-        date,
-        offense,
-        location: place,
-        note,
-        status: "Unsettled"
-    };
-
-    currentLicense.violations.push(newV);
+    // persist back to DB (in-memory)
     licenseDB[currentLicense.licenseNumber] = currentLicense;
 
+    // refresh UI
     loadViolations();
-
-    document.getElementById("v_date").value = "";
-    document.getElementById("v_offense").value = "";
-    document.getElementById("v_place").value = "";
-    document.getElementById("v_note").value = "";
-
-    alert("Violation added successfully!");
+    closeAddViolationModal();
+    alert(editingIndex >= 0 ? "Violation updated successfully!" : "Violation added successfully!");
 }
 
-// ---------- TOGGLE FORM VISIBILITY ----------
-function toggleViolationForm() {
-    const form = document.getElementById("violationForm");
-    if (!form) return;
-    form.classList.toggle("hidden");
+// ---------- DELETE ----------
+function deleteViolation(index) {
+    if (!currentLicense || !currentLicense.violations[index]) return;
+    const ok = confirm("Are you sure you want to delete this violation?");
+    if (!ok) return;
+    currentLicense.violations.splice(index, 1);
+    licenseDB[currentLicense.licenseNumber] = currentLicense;
+    loadViolations();
+    alert("Violation deleted.");
 }
+
+// ---------- PRINT ----------
+function printViolation(index) {
+    if (!currentLicense || !currentLicense.violations[index]) return;
+    const v = currentLicense.violations[index];
+
+    // Build printable HTML
+    const printHtml = `
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Violation Ticket - ${currentLicense.licenseNumber}</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; color: #111; }
+    .ticket { border: 1px solid #222; padding: 16px; max-width: 600px; }
+    .h { font-size: 18px; font-weight: bold; margin-bottom: 8px; }
+    .row { margin-bottom: 6px; }
+    .label { font-weight: bold; display:inline-block; width:150px; }
+  </style>
+</head>
+<body>
+  <div class="ticket">
+    <div class="h">Violation Ticket</div>
+    <div class="row"><span class="label">License #:</span> ${currentLicense.licenseNumber}</div>
+    <div class="row"><span class="label">Name:</span> ${currentLicense.name}</div>
+    <div class="row"><span class="label">Date of Violation:</span> ${v.date}</div>
+    <div class="row"><span class="label">Offense:</span> ${v.offense}</div>
+    <div class="row"><span class="label">Place:</span> ${v.location}</div>
+    <div class="row"><span class="label">Note:</span> ${v.note}</div>
+    <div class="row"><span class="label">Status:</span> ${v.status}</div>
+    <div style="margin-top:12px; font-size:12px; color:#555;">Generated: ${new Date().toLocaleString()}</div>
+  </div>
+  <script>
+    window.onload = function(){ window.print(); };
+  </script>
+</body>
+</html>
+    `;
+
+    const w = window.open("", "_blank", "width=700,height=800");
+    if (!w) {
+        alert("Popup blocked. Please allow popups for this site to print.");
+        return;
+    }
+    w.document.open();
+    w.document.write(printHtml);
+    w.document.close();
+}
+
+// ---------- MISC / Optional helpers ----------
+function clearLicenseBox(){
+    document.getElementById("licenseInput").value = "";
+    const box = document.getElementById("infoBox");
+    if (box) {
+        box.innerHTML = "";
+        box.classList.add("hidden");
+    }
+    clearError();
+}
+
+// Expose for console debugging if desired
+window.lookupLicense = lookupLicense;
+window.openEditViolation = openEditViolation;
+window.deleteViolation = deleteViolation;
+window.printViolation = printViolation;
